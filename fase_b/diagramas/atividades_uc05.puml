@@ -1,0 +1,65 @@
+@startuml atividades_uc05
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam ArrowColor #1a3a5c
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+  DiamondBackgroundColor #f5f8fb
+  DiamondBorderColor #1a3a5c
+}
+skinparam swimlane {
+  BorderColor #2c5f8a
+  TitleFontColor #1a3a5c
+}
+title UC-05 — Gerenciar Estoque
+
+|Administrador|
+start
+:Acessar o módulo "Estoque";
+|Sistema|
+:Exibir lista de produtos com
+quantidades atuais e alertas;
+|Administrador|
+:Escolher a operação desejada;
+if (Cadastrar novo produto?) then (sim [FA-01])
+  :Preencher nome, categoria,
+  quantidade mínima, preço,
+  fornecedor e se é controlado;
+  |Sistema|
+  :Validar nome único e
+  salvar o produto (RN-06);
+else (não)
+  |Administrador|
+  :Selecionar o produto, o tipo de
+  movimentação, a quantidade e o motivo
+  (fornecedor, se entrada; prescrição,
+  se saída de controlado);
+  |Sistema|
+  if (Tipo de movimentação?) then (Entrada [FB])
+    :Registrar ENTRADA e somar
+    a quantidade ao estoque;
+  else (Saída [FA-02])
+    if (Controlado sem prescrição
+    vinculada? (RN-05)) then (sim)
+      :Exibir alerta e impedir
+      a saída [FE-02];
+      stop
+    else (não)
+      :Registrar SAÍDA e subtrair
+      a quantidade do estoque;
+    endif
+  endif
+endif
+|Sistema|
+if (quantidade <= quantidadeMinima? (RN-06)) then (sim)
+  :Exibir alerta "Estoque Baixo"
+  no painel [FE-01];
+else (não)
+endif
+:Exibir confirmação da operação
+e lista de produtos atualizada;
+stop
+@enduml

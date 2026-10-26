@@ -1,0 +1,49 @@
+=====Feedbacks mais comuns da ATIVIDADE A-2=====
+
+Os diagramas devem estar legíveis: nítidos e bem enquadrados.
+
+Os diagramas devem evitar ao máximo sobreposição de elementos. Os relacionamentos não devem sobrepassar (ou serem sobrepassados) por outros elementos.
+
+Faltou informar os integrantes do grupo no comentário no ato da entrega (um em cada linha e em ordem alfabética).
+
+As observações de feedback foram anotadas diretamente no PDF.
+
+O Diagrama de Casos de Uso deve ser exposto antes da descrição dos casos de uso.
+
+A identificação dos casos de uso também devem estar presentes no diagrama, junto ao nome de cada UC.
+
+As descrições de todos os fluxos precisam estar com os passos enumerados, e devidamente separados em linhas distintas.
+
+As referência cruzadas são usadas para se referir aos Requisitos relacionados ao Caso de Uso.
+
+Uso equivocado de <<includes>> (não deve ser confundido com pré-requisitos). Só deve haver include se o caso de uso chamado faz parte de algum passo durante a execução do caso de uso chamador.
+
+Se um caso de uso é incluído/chamado (include) por apenas um único caso de uso chamador, então esse caso de uso chamado deve ser incorporado ao caso de uso chamador.
+
+O uso de <<extends>> e <<include>> no Diagrama de Casos de Uso deve ser refletido na Descrição dos respectivos Casos de Uso que "realizam a chamada" (obrigatória ou eventual) a outro caso de uso. Cada include (chamada obrigatória) devem ser refletido em algum passo do FB (fluxo básico) do caso de uso que invoca. Cada extends (chamada eventual) deve ser refletido em algum passo de algum FA (ou FE) do caso de uso invocador.
+
+Todos os Fluxos Alternativos e de Exceção devem ser revisados. Não confundir Fluxos Alternativos com Fluxos de Exceção: os Fluxos Alternativos são desvios do Fluxo Básico que ainda permitem chegar nas pós-condições, enquanto que os Fluxos de Exceção são desvios para tratar situações/ações que impedem que as pós condições sejam atingidas (geralmente cancelam o caso de uso, ou reiniciam o caso de uso, ou voltam a passos anteriores do caso de uso).
+
+Todos os Fluxos Alternativos e de Exceção devem ser revisados. Os fluxos alternativos e de exceção devem ser iniciados a partir de algum ponto do fluxo básico (ou de outro fluxo alternativo), e esse ponto de início deve estar evidenciado na descrição (preferencialmente a partir do fluxo básico, por ex: Passo 3 - Texto do passo 3....[FA1]). Perceba que um mesmo passo do FB pode provocar eventualmente gerar mais de um FE, ou mesmo mais de um FA.
+
+Formatar corretamente a descrição dos fluxos alternativos e de exceção, de modo a deixar claro quais são os passos (e a sequência enumerada) que pertencem a cada FA ou a cada FE, indicando onde inicia e para onde retorna.
+
+Entendo que os casos de uso de manutenção foram separados conforme a natureza da manutenção. Entretanto, por consistência com o Diagrama de Casos de Uso, é importante que um dos ajustes seja feito: (1) Alterar o Diagrama de Casos de Uso para ficar em conformidade com a Descrição dos Casos de Uso; (2) Alterar o Diagrama de Casos (utilizando heranças/realizações entre casos de uso) e a Descrição dos casos de Uso (adicionando a descrição do caso de uso pai para cada hierarquia de herança entre os casos de uso).
+
+Casos de uso que realizam casos de uso de manutenção de cadastro: tais casos de uso que são realizações de um caso de uso 'pai', e portanto devem ser mencionados no diagrama de casos de uso. Isso geralmente é diagramado fazendo uso de herança entre casos de uso, já que são formas excludentes de realização obrigatória.
+
+Por se tratar de um modelo no nível conceitual, o modelo de classes pode até já contemplar identificadores artificiais (id, PK), mas isso não exclui a necessidade de elencar os identificadores naturais (os quais podem ser indicados como chaves únicas/candidatas/secundárias, se já houver uma chave primária artificial).
+
+Por se tratar de um modelo no nível conceitual, reavaliar as classes que deveria estar modeladas como classes associativas.
+
+Notação de agregações usadas equivocadamente (é usada APENAS quando há o conceito de parte e todo).
+
+Atores inócuos (não há diferença na atuação dos atores).
+
+Se um Ator-2 herda de um Ator-1, então o Ator-2 não precisa ter comunicação direta com os UCs já associados diretamente ao Ator-1.
+
+Atenção ao sentido dos relacionamentos entre Atores e UCs no Diagrama de Casos de Uso. O sentido deve ser de quem inicia a interação para o ator/UC requisitado a participar da interação.
+
+Os atributos resultados de relacionamento não precisam ser listados como atributos dentro da classe, e sim como o nome da participação em um dos extremos da associação.
+
+As tabelas com as descrições dos casos de uso devem ser divididas em EXATAMENTE 2 colunas, de modo que a primeira contenha o nome do item, e a segunda contenha a descrição do item.

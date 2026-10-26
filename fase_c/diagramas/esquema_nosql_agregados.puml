@@ -1,0 +1,156 @@
+@startuml esquema_nosql_agregados
+!pragma layout smetana
+set namespaceSeparator none
+hide circle
+hide empty members
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam ranksep 40
+skinparam nodesep 25
+skinparam package {
+  BackgroundColor #f8fafd
+  BorderColor #1a3a5c
+  FontColor #1a3a5c
+}
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+  HeaderBackgroundColor #dbe5f0
+  ArrowColor #1a3a5c
+}
+
+package "Database: clinica_vida_animal (MongoDB 7.0 — Motor WiredTiger / Documentos BSON)" {
+
+  entity "tutores <<Collection>>" as tutores {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * cpf_hash : String(64) <<UK>>
+    * cpf_cifrado : BinData (AES-256)
+    * nome : String <<Index>>
+    * telefone : String
+    email : String <<UK, Partial>>
+    * data_cadastro : Date
+    --
+    <b>endereco : Object <<Embedded 1:1>></b>
+      * logradouro, numero, bairro : String
+      complemento : String
+      * cidade : String | * uf : String(2)
+      * cep : String(8)
+  }
+
+  entity "tipos_vacina <<Collection>>" as tipos_vacina {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * nome : String <<UK>>
+    * intervalo_minimo_dias : Int
+    * total_doses : Int
+  }
+
+  entity "servicos <<Collection>>" as servicos {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * nome : String <<UK>>
+    * preco : Double
+    * ativo : Boolean
+  }
+
+  entity "usuarios <<Collection>>" as usuarios {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * login : String <<UK>>
+    * nome : String
+    * email : String <<UK>>
+    * senha_hash : String(60)
+    * perfil : Enum('ADMINISTRADOR',\n  'RECEPCIONISTA','VETERINARIO')
+    crmv : String <<UK, Partial>>
+    * ativo : Boolean
+  }
+
+  entity "pets <<Collection>>" as pets {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * tutor_id : ObjectId <<Ref>> <<UK1>>
+    * nome : String <<UK1>>
+    * especie : String | raca : String
+    * sexo : Enum('M','F')
+    data_nascimento : Date | peso_kg : Double
+    --
+    <b>tutor_resumo : Object <<Embedded 1:1>></b>
+      * nome : String | * telefone : String
+    --
+    <b>vacinas_aplicadas : Array<Object> <<Embedded 0..*>></b>
+      * tipo_vacina_id : ObjectId <<Ref>>
+      * nome_vacina : String | * numero_dose : Int
+      * data_aplicacao : Date
+      proxima_dose : Date <<Multikey Index>>
+      lote : String | * consulta_id : ObjectId <<Ref>>
+  }
+
+  entity "consultas <<Collection>>" as consultas {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * pet_id : ObjectId <<Ref>> <<Idx1>>
+    * veterinario_id : ObjectId <<Ref>> <<UK_Partial>>
+    * data_hora : Date <<UK_Partial>> <<Idx1>>
+    * tipo : Enum('ROTINA','RETORNO','VACINACAO','EMERGENCIA')
+    * status : Enum('AGENDADA','REALIZADA','CANCELADA','NO_SHOW','PAGA')
+    --
+    <b>resumo_atendimento : Object <<Embedded 1:1>></b>
+      * pet_nome, tutor_nome, veterinario_nome : String
+    --
+    <b>itens_servico : Array<Object> <<Embedded 0..*>></b>
+      * servico_id : ObjectId <<Ref>> | * nome : String
+      * quantidade : Int | * valor_unitario : Double
+    --
+    <b>prontuario : Object <<Embedded 0..1>></b>
+      * anamnese, diagnostico : String
+      exame_fisico, prescricao : String | * data_registro : Date
+    --
+    <b>recibo : Object <<Embedded 0..1>></b>
+      * numero : String <<UK, Partial>>
+      * emitido_por : ObjectId <<Ref>>
+      * subtotal, desconto, total : Double
+      * forma_pagamento : Enum('DINHEIRO','CARTAO','PIX')
+      * data_emissao : Date
+  }
+
+  entity "produtos <<Collection>>" as produtos {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * nome : String <<UK>> | * categoria : String
+    * controlado : Boolean
+    * quantidade : Int | * quantidade_minima : Int
+    * preco_unitario : Double
+    --
+    <b>fornecedor : Object <<Embedded 0..1>></b>
+      * cnpj : String(14) | * razao_social : String
+      telefone, email : String
+  }
+
+  entity "movimentacoes_estoque <<Collection>>" as mov {
+    <&key> _id : ObjectId <<PK>>
+    --
+    * produto_id : ObjectId <<Ref>> <<Idx1>>
+    * usuario_id : ObjectId <<Ref>>
+    * tipo : Enum('ENTRADA','SAIDA')
+    * quantidade : Int | * motivo : String
+    * data_movimentacao : Date <<Idx1>>
+    * produto_controlado : Boolean
+    fornecedor_cnpj : String(14)
+    consulta_id : ObjectId <<Ref>>
+  }
+
+}
+
+tutores ||..o{ pets : "tutor_id"
+tipos_vacina ||..o{ pets : "tipo_vacina_id"
+pets ||..o{ consultas : "pet_id"
+servicos ||..o{ consultas : "servico_id"
+usuarios ||..o{ consultas : "veterinario_id /\nemitido_por"
+produtos ||..o{ mov : "produto_id"
+usuarios ||..o{ mov : "usuario_id"
+consultas |o..o{ mov : "consulta_id (RN-05)"
+
+@enduml

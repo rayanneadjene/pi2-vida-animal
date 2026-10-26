@@ -1,0 +1,96 @@
+@startuml componentes
+!pragma layout smetana
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam componentStyle uml2
+skinparam ranksep 70
+skinparam nodesep 50
+skinparam ArrowColor #1a3a5c
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+}
+
+component WEB <<subsystem>> [
+  <b>Aplicação Web — SPA</b>
+  (Camada de Apresentação)
+  ----
+  • Módulo Cadastro (Tutores/Pets)
+  • Módulo Agenda
+  • Módulo Atendimento (Prontuário/Vacinas)
+  • Módulo Financeiro
+  • Módulo Estoque
+  • Módulo Administração (Usuários/Relatórios)
+]
+
+interface "API REST (HTTPS/JSON)" as IREST
+
+package "API Vida Animal — Backend (Node.js)" {
+  component CTRL <<adapter>> [
+    <b>Adaptadores de Interface</b>
+    ----
+    • Controladores REST
+    • Middleware de Autenticação (JWT)
+      e Autorização por perfil (RNF-03)
+  ]
+
+  component UC <<application>> [
+    <b>Casos de Uso (Regras da Aplicação)</b>
+    ----
+    • CadastroService (UC-01)
+    • AgendamentoService (UC-02)
+    • AtendimentoService (UC-03)
+    • FaturamentoService (UC-04)
+    • EstoqueService (UC-05)
+    • UsuarioService (UC-06)
+    • RelatorioService (UC-07)
+  ]
+
+  component DOM <<domain>> [
+    <b>Entidades de Domínio</b>
+    ----
+    Tutor, Pet, Consulta, Prontuario,
+    Vacina, Produto, MovimentacaoEstoque,
+    Recibo, Usuario
+  ]
+
+  interface "IRepositorios" as IREPO
+  interface "ICriptografia" as ICRYPTO
+  interface "IGeradorDocumentos" as IDOC
+
+  component REPO <<infrastructure>> [
+    <b>Repositórios SQL</b>
+    (ORM / driver MySQL)
+  ]
+  component CRYPTO <<infrastructure>> [
+    <b>Criptografia</b>
+    (bcrypt / AES-256)
+  ]
+  component PDF <<infrastructure>> [
+    <b>Gerador de</b>
+    <b>Documentos</b> (PDF/CSV)
+  ]
+}
+
+database "SGBD MySQL 8\nclinica_vida_animal" as DB
+
+WEB -down-( IREST
+IREST -down- CTRL
+CTRL -down-> UC
+UC -right..> DOM
+
+UC -down-( IREPO
+UC -down-( ICRYPTO
+UC -down-( IDOC
+IREPO -down- REPO
+ICRYPTO -down- CRYPTO
+IDOC -down- PDF
+
+REPO -down-> DB : SQL / TCP 3306
+@enduml

@@ -1,0 +1,496 @@
+ESPECIFICAÇÃO DE REQUISITOS
+Sistema de Gestão para Clínica Veterinária "Vida Animal"
+Fase A-1 — Documento Inicial de Especificação de Requisitos
+
+Disciplina: Projeto Integrador II
+Integrantes do grupo: Pierre Claudino Chapetta, Rayanne Adjenne Gonçalves de Souza
+Data: 24 de setembro de 2026
+
+1. Introdução
+1.1. Objetivo e Visão Geral do Documento
+Este documento apresenta a Especificação de Requisitos (Fase A-1) do sistema de gestão para a clínica
+veterinária fictícia "Vida Animal": contexto, escopo, atores, regras de negócio, requisitos funcionais/nãofuncionais e visão geral dos casos de uso. Destina-se à equipe de desenvolvimento, aos avaliadores da disciplina
+e, representativamente, aos responsáveis pela clínica. Fluxos detalhados de casos de uso e telas ficam para fases
+posteriores.
+
+1.2. Termos e Siglas
+●
+
+Tutor: responsável legal pelo pet. Pet: animal atendido, sempre vinculado a um tutor.
+
+●
+
+Prontuário: histórico clínico do pet (consultas, diagnósticos, vacinas).
+
+●
+
+No-show: falta sem cancelamento prévio dentro do prazo. LGPD: Lei nº 13.709/2018.
+
+●
+
+RN-XX / RF-XX / RNF-XX / UC-XX: identificadores de regra de negócio, requisito funcional, requisito nãofuncional e caso de uso.
+
+2. Visão Geral do Produto
+2.1. Descrição do Minimundo
+A clínica "Vida Animal" atende pequenos animais, mas seus processos são manuais: agendamento por
+telefone/planilha (gerando conflitos), prontuário em papel (risco de perda de informação) e estoque e financeiro
+sem controle sistemático (causando falta de produtos e dados pouco confiáveis).
+Por isso, a direção decidiu informatizar o cadastro de tutores/pets, o agendamento, o prontuário eletrônico, o
+controle de estoque e a emissão de recibos, reduzindo retrabalho e melhorando a gestão da clínica.
+
+2.2. Delimitação do Escopo Inicial
+Público-alvo: clínicas veterinárias de pequeno/médio porte (recepção, veterinários e, indiretamente, tutores).
+Dores: agenda em conflito, prontuário em papel, estoque sem controle, cobrança sem rastreabilidade.
+Macro-funcionalidades: cadastro de tutores/pets; agendamento; prontuário eletrônico; controle de estoque;
+emissão de recibos; calendário de vacinas; gestão de usuários.
+Fora do escopo desta fase:
+●
+
+Pagamento online/nota fiscal eletrônica e módulo financeiro/contábil completo.
+
+●
+
+Aplicativo móvel nativo, telemedicina e integração com laboratórios externos.
+
+●
+
+Programa de fidelidade, múltiplas unidades e módulo de RH/folha de pagamento.
+
+3. Atores e Envolvidos
+3.1. Atores (interagem com o sistema)
+Ator
+
+Descrição
+
+Tutor (Cliente)
+
+Responsável pelo pet; solicita e acompanha os atendimentos.
+
+Recepcionista
+
+Cadastra tutores/pets, agenda consultas e emite recibos.
+
+Veterinário
+
+Realiza consultas, registra o prontuário e prescreve tratamentos.
+
+Auxiliar Veterinário
+
+Auxilia em procedimentos e movimenta o estoque.
+
+Administrador do Sistema
+
+Gerencia usuários, acessos e relatórios.
+
+3.2. Envolvidos (não interagem com o sistema)
+Envolvido
+
+Descrição
+
+Proprietário(a)/Gerente
+
+Interessado nos relatórios e resultados; não opera o sistema.
+
+Fornecedor de Insumos
+
+Não interage com o sistema; afeta a reposição de estoque.
+
+4. Requisitos
+4.1. Regras de Negócio (RN)
+Regras válidas independentemente do sistema (existiriam mesmo em processo manual). Cada uma impacta ao
+menos um RF.
+ID
+
+Descrição
+
+RF Impactado
+
+RN-01
+
+Todo pet atendido pela clínica deve ter um tutor responsável identificado.
+
+RF-02
+
+RN-02
+
+Atendimentos só ocorrem dentro do horário de funcionamento (seg-sáb, 8h-19h).
+
+RF-03
+
+RN-03
+
+Cancelamento deve ser avisado com 2h de antecedência; senão, conta como falta.
+
+RF-03
+
+RN-04
+
+Vacina só pode ser aplicada respeitando o intervalo mínimo da dose anterior.
+
+RF-08
+
+RN-05
+
+Medicamento controlado só é dispensado mediante prescrição veterinária.
+
+RF-04, RF-06
+
+RN-06
+
+Cada produto deve ter uma quantidade mínima definida em estoque.
+
+RF-06
+
+RN-07
+
+Pagamento via PIX tem 5% de desconto sobre o valor do serviço.
+
+RF-07
+
+RN-08
+
+Dados sensíveis (CPF do tutor, saúde do pet) são confidenciais e devem ser
+criptografados, conforme a LGPD.
+
+RF-01, RF-02, RF-05
+
+4.2. Requisitos Funcionais (RF)
+ID
+
+Descrição
+
+UC
+
+RF-01
+
+Cadastrar, editar e consultar tutores.
+
+UC-01
+
+RF-02
+
+Cadastrar, editar e consultar pets, vinculados a um tutor.
+
+UC-02
+
+RF-03
+
+Agendar, reagendar, cancelar e visualizar a agenda de consultas.
+
+UC-03
+
+RF-04
+
+Registrar no prontuário a anamnese, o diagnóstico e a prescrição do atendimento.
+
+UC-04
+
+RF-05
+
+Consultar o histórico clínico completo de um pet.
+
+UC-05
+
+RF-06
+
+Controlar entradas e saídas de estoque, com alerta de nível mínimo (RN-06).
+
+UC-06
+
+RF-07
+
+Emitir recibo do atendimento, aplicando desconto quando cabível (RN-07).
+
+UC-07
+
+RF-08
+
+Manter o calendário de vacinas e sinalizar doses pendentes.
+
+UC-08
+
+RF-09
+
+Cadastrar usuários e definir perfis de acesso.
+
+UC-09
+
+RF-10
+
+Gerar relatórios gerenciais (atendimentos, faturamento, serviços mais pedidos).
+
+UC-10
+
+4.3. Requisitos Não-Funcionais (RNF)
+ID
+
+Tipo
+
+Descrição
+
+RNF-01
+
+Usabilidade
+
+Acesso via navegador, responsivo para computador e tablet.
+
+RNF-02
+
+Desempenho
+
+Operações comuns respondem em até 3 segundos.
+
+RNF-03
+
+Segurança
+
+Só usuários autenticados (veterinário/administrador) acessam prontuários.
+
+RNF-04
+
+Confiabilidade
+
+Disponibilidade mínima de 99% no horário de funcionamento.
+
+RNF-05
+
+Segurança
+
+Senhas armazenadas com criptografia (hash).
+
+ID
+
+Tipo
+
+Descrição
+
+RNF-06
+
+Confiabilidade
+
+Backup automático diário dos dados.
+
+RNF-07
+
+Portabilidade
+
+Funciona nos navegadores mais usados (Chrome, Firefox, Edge).
+
+5. Casos de Uso — Visão Geral
+Cada caso de uso é apresentado em tabela de 2 colunas (Item | Descrição), sem detalhamento de fluxos nesta
+fase.
+UC-01 — Cadastrar Tutor
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Recepcionista
+
+Ator(es) Secundário(s)
+
+—
+
+Objetivo
+
+Registrar os dados de um tutor, viabilizando agendamentos e o cadastro de seus
+pets.
+
+RF Relacionado
+
+RF-01
+
+UC-02 — Cadastrar Pet
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Recepcionista
+
+Ator(es) Secundário(s)
+
+—
+
+Objetivo
+
+Registrar um animal vinculado a um tutor, permitindo seu atendimento.
+
+RF Relacionado
+
+RF-02
+
+UC-03 — Agendar Consulta
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Recepcionista
+
+Ator(es) Secundário(s)
+
+Tutor
+
+Objetivo
+
+Reservar, reagendar ou cancelar um horário de atendimento para um pet.
+
+RF Relacionado
+
+RF-03
+
+UC-04 — Registrar Atendimento
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Veterinário
+
+Ator(es) Secundário(s)
+
+—
+
+Objetivo
+
+Documentar no prontuário a consulta realizada, antes da cobrança.
+
+RF Relacionado
+
+RF-04
+
+UC-05 — Consultar Histórico do Pet
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Veterinário
+
+Ator(es) Secundário(s)
+
+Recepcionista
+
+Objetivo
+
+Acessar o histórico clínico de um pet para apoiar o atendimento.
+
+RF Relacionado
+
+RF-05
+
+UC-06 — Controlar Estoque
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Auxiliar Veterinário
+
+Ator(es) Secundário(s)
+
+Administrador do Sistema
+
+Objetivo
+
+Registrar entradas/saídas de produtos e evitar ruptura de estoque.
+
+RF Relacionado
+
+RF-06
+
+UC-07 — Emitir Recibo
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Recepcionista
+
+Ator(es) Secundário(s)
+
+Tutor
+
+Objetivo
+
+Gerar o comprovante de cobrança do atendimento prestado.
+
+RF Relacionado
+
+RF-07
+
+UC-08 — Gerenciar Vacinas
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Veterinário
+
+Ator(es) Secundário(s)
+
+Recepcionista
+
+Objetivo
+
+Acompanhar vacinas aplicadas e identificar doses pendentes.
+
+RF Relacionado
+
+RF-08
+
+UC-09 — Gerenciar Usuários
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Administrador do Sistema
+
+Ator(es) Secundário(s)
+
+—
+
+Objetivo
+
+Cadastrar usuários e definir seus perfis de acesso.
+
+RF Relacionado
+
+RF-09
+
+UC-10 — Gerar Relatórios
+Item
+
+Descrição
+
+Ator(es) Principal(is)
+
+Administrador do Sistema
+
+Ator(es) Secundário(s)
+
+Proprietário(a)/Gerente
+
+Objetivo
+
+Consultar indicadores de atendimentos, faturamento e serviços.
+
+RF Relacionado
+
+RF-10
+
+6. Anexos
+Nenhum anexo nesta fase. Protótipos e diagramas serão incluídos nas fases seguintes.
+
+

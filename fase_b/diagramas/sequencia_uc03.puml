@@ -1,0 +1,108 @@
+@startuml sequencia_uc03
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+skinparam ArrowColor #1a3a5c
+skinparam participant {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+}
+autonumber "<b>0"
+title UC-03 — Realizar Consulta Clínica
+
+actor "Veterinário" as VET
+boundary ":TelaAtendimento" as TELA
+control ":ControladorAtendimento" as CTRL
+entity ":Consulta" as CONS
+entity ":Pet" as PET
+entity ":Vacina" as VAC
+entity ":Prontuario" as PRONT
+
+VET -> TELA : acessarAgendaDoDia()
+activate TELA
+TELA -> CTRL : listarConsultasDoDia(idVeterinario)
+activate CTRL
+CTRL -> CONS : buscarAgendadas(idVeterinario, hoje)
+activate CONS
+CONS --> CTRL : List<Consulta>
+deactivate CONS
+CTRL --> TELA : List<Consulta>
+deactivate CTRL
+TELA --> VET : exibe agenda do dia
+
+VET -> TELA : selecionarConsulta(idConsulta)
+
+alt Paciente não compareceu [FE-01]
+  VET -> TELA : registrarNoShow()
+  TELA -> CTRL : registrarNoShow(idConsulta)
+  activate CTRL
+  CTRL -> CONS : registrarNoShow()
+  activate CONS
+  CONS -> CONS : status = "NO_SHOW" (RN-03)
+  CONS --> CTRL : ok
+  deactivate CONS
+  CTRL --> TELA : ok
+  deactivate CTRL
+  TELA --> VET : "Consulta registrada como No-show"
+
+else Paciente presente (Fluxo Básico)
+  VET -> TELA : iniciarConsulta()
+  TELA -> CTRL : iniciarAtendimento(idConsulta)
+  activate CTRL
+  CTRL -> PET : consultarHistorico()
+  activate PET
+  PET --> CTRL : List<Prontuario>
+  CTRL -> PET : listarVacinas()
+  PET --> CTRL : List<Vacina>
+  deactivate PET
+  CTRL --> TELA : histórico clínico (RF-05)
+  deactivate CTRL
+  TELA --> VET : exibe histórico do pet
+
+  VET -> TELA : preencherAnamneseEExameFisico(dados)
+  VET -> TELA : informarDiagnosticoEPrescricao(dados)
+
+  opt Aplicação de vacina [FA-01]
+    VET -> TELA : registrarVacina(tipoVacina, dose)
+    TELA -> CTRL : registrarVacina(idConsulta, tipoVacina, dose)
+    activate CTRL
+    CTRL -> VAC : verificarIntervalo(pet, tipoVacina)
+    activate VAC
+    VAC --> CTRL : intervaloRespeitado : boolean
+    deactivate VAC
+    alt intervaloRespeitado = true
+      CTRL -> VAC : registrarAplicacao(consulta, tipoVacina, dose)
+      activate VAC
+      VAC -> VAC : calcularProximaDose() (RF-08)
+      VAC --> CTRL : proximaDose
+      deactivate VAC
+      CTRL --> TELA : vacina registrada
+      TELA --> VET : exibe data da próxima dose
+    else intervaloRespeitado = false [FE-02]
+      CTRL --> TELA : erro "Intervalo mínimo não respeitado" (RN-04)
+      TELA --> VET : exibe alerta (vacina não registrada)
+    end
+    deactivate CTRL
+  end
+
+  VET -> TELA : finalizarConsulta()
+  TELA -> CTRL : finalizarConsulta(idConsulta, dadosClinicos)
+  activate CTRL
+  create PRONT
+  CTRL -> PRONT : registrar(consulta, dadosClinicos)
+  activate PRONT
+  PRONT --> CTRL : prontuário salvo
+  deactivate PRONT
+  CTRL -> CONS : finalizar()
+  activate CONS
+  CONS -> CONS : status = "REALIZADA"
+  CONS --> CTRL : ok
+  deactivate CONS
+  CTRL --> TELA : ok
+  deactivate CTRL
+  TELA --> VET : "Consulta finalizada com sucesso"
+end
+deactivate TELA
+@enduml

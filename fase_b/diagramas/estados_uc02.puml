@@ -1,0 +1,42 @@
+@startuml estados_uc02
+!pragma layout smetana
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam ArrowColor #1a3a5c
+skinparam state {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+}
+title UC-02 — Agendar Consulta (ciclo de vida da Consulta)
+
+state "Agendada" as Agendada
+Agendada : entry / reservar horário do veterinário
+Agendada : do / aguardar data da consulta
+
+state "Cancelada" as Cancelada
+Cancelada : entry / liberar horário na agenda
+
+state "No-show" as NoShow
+NoShow : entry / registrar falta do tutor
+
+[*] --> Agendada : agendar(pet, veterinario, dataHora)\n[horário livre e dentro do expediente (RN-02)]
+
+Agendada --> Agendada : reagendar(novaDataHora)\n[novo horário livre e dentro do expediente (RN-02)] [FA-01]
+
+Agendada --> Cancelada : cancelar()\n[antecedência >= 2h (RN-03)] [FA-02]
+
+Agendada --> NoShow : cancelar()\n[antecedência < 2h (RN-03)] [FE-02]
+
+Agendada --> [*] : iniciarConsulta()\n/ encaminhar ao UC-03
+
+Cancelada --> [*]
+NoShow --> [*]
+
+note bottom of Agendada
+  Tentativas de agendar/reagendar em horário
+  ocupado ou fora do expediente [FE-01] não
+  alteram o estado: o sistema sugere outro horário.
+end note
+@enduml

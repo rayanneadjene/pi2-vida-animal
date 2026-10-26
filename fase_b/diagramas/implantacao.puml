@@ -1,0 +1,48 @@
+@startuml implantacao
+!pragma layout smetana
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam ArrowColor #1a3a5c
+skinparam node {
+  BackgroundColor #f5f8fb
+  BorderColor #1a3a5c
+}
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+}
+
+node "Estação de Trabalho da Clínica\n(PC ou Tablet)" as PC <<device>> {
+  node "Navegador Web\n(Chrome / Firefox / Edge)" as BROWSER <<executionEnvironment>> {
+    artifact "vida-animal-web\n(SPA: HTML/CSS/JS)" as A_WEB
+  }
+}
+
+node "VPS Oracle Cloud (OCI)\nUbuntu Server 22.04 LTS" as VPS <<device>> {
+  node "Nginx 1.24" as NGINX <<executionEnvironment>> {
+    artifact "dist/ (arquivos estáticos da SPA)" as A_DIST
+    artifact "nginx.conf\n(proxy reverso + TLS)" as A_CONF
+  }
+  node "Node.js 20 LTS" as NODE <<executionEnvironment>> {
+    artifact "vida-animal-api\n(server.js)" as A_API
+  }
+  node "MySQL Server 8.0" as MYSQL <<executionEnvironment>> {
+    artifact "clinica_vida_animal\n(schema.sql)" as A_DB
+  }
+  node "cron" as CRON <<executionEnvironment>> {
+    artifact "backup_diario.sh\n(mysqldump)" as A_BKP
+  }
+}
+
+node "OCI Object Storage" as STORAGE <<device>> {
+  artifact "backups/\n(.sql.gz — retenção 30 dias)" as A_FILES
+}
+
+PC -- VPS : <<protocol>>\nHTTPS / TCP 443
+NGINX -- NODE : <<protocol>>\nHTTP / localhost:3000
+NODE -- MYSQL : <<protocol>>\nTCP / localhost:3306
+CRON -- MYSQL : <<protocol>>\nlocalhost:3306
+VPS -- STORAGE : <<protocol>>\nHTTPS (OCI API)
+@enduml

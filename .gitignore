@@ -1,0 +1,7 @@
+# Chaves SSH - nunca versionar
+*.key
+*.key.pub
+ssh-key-*
+# Material descartado e de referência
+_descartados/
+referencias/

@@ -1,0 +1,112 @@
+@startuml exemplo_organizacao_fisica_nosql
+!pragma layout smetana
+set namespaceSeparator none
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 10
+skinparam ranksep 45
+skinparam nodesep 35
+skinparam package {
+  BackgroundColor #f8fafd
+  BorderColor #1a3a5c
+  FontColor #1a3a5c
+}
+skinparam object {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+  HeaderBackgroundColor #dbe5f0
+  ArrowColor #1a3a5c
+}
+
+package "SGBD MongoDB 7.0 — Exemplo de Organização Física dos Dados em Coleções de Documentos BSON" {
+
+  object "<b>Coleção: tutores</b> (Documento BSON — Tutor #2)" as doc_tutor {
+    <b>_id</b> = ObjectId("670a01000000000000000102")
+    <b>cpf_hash</b> = "e3b0...c442" <i>(UK Index — SHA-256)</i>
+    <b>cpf_cifrado</b> = BinData(0, "U2FsdGVkX1...") <i>(AES-256 — RN-08)</i>
+    <b>nome</b> = "Juliana Pires"
+    <b>telefone</b> = "21988880002"
+    <b>email</b> = "juliana@email.com"
+    --
+    <b>endereco : {</b> <i>(Subdocumento Embutido 1:1)</i>
+      <b>logradouro</b> : "Av. Brasil", <b>numero</b> : "2500",
+      <b>bairro</b> : "Penha", <b>cidade</b> : "Rio de Janeiro", <b>uf</b> : "RJ", <b>cep</b> : "21000000"
+    <b>}</b>
+  }
+
+  object "<b>Coleção: pets</b> (Documento BSON — Pet #3: Bidu)" as doc_pet {
+    <b>_id</b> = ObjectId("670a02000000000000000203")
+    <b>tutor_id</b> = ObjectId("670a01000000000000000102") <i>(UK Composta: tutor_id + nome)</i>
+    <b>nome</b> = "Bidu"
+    <b>especie</b> = "Cão" | <b>raca</b> = "Vira-lata" | <b>sexo</b> = "M" | <b>peso_kg</b> = 12.80
+    --
+    <b>tutor_resumo : {</b> <i>(Desnormalização Controlada)</i>
+      <b>nome</b> : "Juliana Pires", <b>telefone</b> : "21988880002"
+    <b>}</b>
+    --
+    <b>vacinas_aplicadas : [</b> <i>(Array de Subdocumentos 0..* — Multikey Index em proxima_dose)</i>
+      <b>{</b>
+        <b>tipo_vacina_id</b> : ObjectId("670a04000000000000000402"),
+        <b>nome_vacina</b> : "Antirrábica", <b>numero_dose</b> : 1,
+        <b>data_aplicacao</b> : ISODate("2026-06-10T10:00:00Z"),
+        <b>proxima_dose</b> : ISODate("2027-06-10T00:00:00Z"), <b>lote</b> : "LT-AR-2026B",
+        <b>consulta_id</b> : ObjectId("670a06000000000000000603")
+      <b>}</b>
+    <b>]</b>
+  }
+
+  object "<b>Coleção: consultas</b> (Documento BSON — Consulta #3: Emergência)" as doc_consulta {
+    <b>_id</b> = ObjectId("670a06000000000000000603")
+    <b>pet_id</b> = ObjectId("670a02000000000000000203")
+    <b>veterinario_id</b> = ObjectId("670a00000000000000000003") <i>(UK Parcial: vet + data_hora ativa)</i>
+    <b>data_hora</b> = ISODate("2026-10-06T14:00:00Z") | <b>tipo</b> = "EMERGENCIA" | <b>status</b> = "PAGA"
+    --
+    <b>itens_servico : [</b> <i>(Array Embutido 1..*: substitui tabela associativa item_servico)</i>
+      { <b>servico_id</b>: ObjectId("...0304"), <b>nome</b>: "Atendimento de emergência", <b>qtd</b>: 1, <b>valor_unitario</b>: 250.00 },
+      { <b>servico_id</b>: ObjectId("...0305"), <b>nome</b>: "Exame de sangue", <b>qtd</b>: 1, <b>valor_unitario</b>: 150.00 }
+    <b>]</b>
+    --
+    <b>prontuario : {</b> <i>(Subdocumento Embutido 0..1 — RF-04)</i>
+      <b>anamnese</b> : "Dor intensa e claudicação após queda.",
+      <b>diagnostico</b> : "Contusão com suspeita de lesão ligamentar.",
+      <b>prescricao</b> : "Tramadol 50 mg, 1 comprimido a cada 12h por 5 dias."
+    <b>}</b>
+    --
+    <b>recibo : {</b> <i>(Subdocumento Embutido 0..1 — RN-07: Desconto PIX 5%)</i>
+      <b>numero</b> : "2026-000003", <b>subtotal</b> : 400.00, <b>forma_pagamento</b> : "PIX",
+      <b>desconto</b> : 20.00, <b>total</b> : 380.00
+    <b>}</b>
+  }
+
+  object "<b>Coleção: produtos</b> (Documento BSON — Produto #4)" as doc_produto {
+    <b>_id</b> = ObjectId("670a05000000000000000504")
+    <b>nome</b> = "Tramadol 50 mg" <i>(UK Index)</i>
+    <b>categoria</b> = "Medicamento" | <b>controlado</b> = true <i>(RN-05)</i>
+    <b>quantidade</b> = 3 | <b>quantidade_minima</b> = 5 <i>(RN-06: 3 <= 5)</i>
+    <b>preco_unitario</b> = 28.00
+    --
+    <b>fornecedor : {</b> <i>(Subdocumento Embutido 1:1)</i>
+      <b>cnpj</b> : "44555666000172",
+      <b>razao_social</b> : "FarmaPet Comércio S.A."
+    <b>}</b>
+  }
+
+  object "<b>Coleção: movimentacoes_estoque</b> (Documento BSON — Saída #7)" as doc_mov {
+    <b>_id</b> = ObjectId("670a07000000000000000707")
+    <b>produto_id</b> = ObjectId("670a05000000000000000504")
+    <b>usuario_id</b> = ObjectId("670a00000000000000000003")
+    <b>tipo</b> = "SAIDA" | <b>quantidade</b> = 5
+    <b>motivo</b> = "Dispensa prescrita (RN-05)"
+    <b>consulta_id</b> = ObjectId("670a06000000000000000603")
+    <b>data_movimentacao</b> = ISODate("2026-10-06T15:00:00Z")
+  }
+
+}
+
+doc_tutor <-- doc_pet : "tutor_id (ObjectId)"
+doc_pet <-- doc_consulta : "pet_id (ObjectId)"
+doc_consulta <-- doc_mov : "consulta_id (RN-05)"
+doc_produto <-- doc_mov : "produto_id (ObjectId)"
+
+@enduml

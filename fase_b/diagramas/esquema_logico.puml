@@ -1,0 +1,178 @@
+@startuml esquema_logico
+!pragma layout smetana
+hide circle
+hide empty members
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 11
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+  HeaderBackgroundColor #dbe5f0
+  ArrowColor #1a3a5c
+}
+
+
+entity "tutor" as tutor {
+  <&key> id : INT <<PK>>
+  --
+  * cpf_hash : CHAR(64) <<UK>>
+  * cpf_cifrado : VARBINARY(255)
+  * nome : VARCHAR(120)
+  * telefone : VARCHAR(20)
+  email : VARCHAR(120) <<UK>>
+  logradouro : VARCHAR(120)
+  numero : VARCHAR(10)
+  complemento : VARCHAR(60)
+  bairro : VARCHAR(60)
+  cidade : VARCHAR(60)
+  uf : CHAR(2)
+  cep : CHAR(8)
+  * data_cadastro : DATETIME
+}
+
+entity "pet" as pet {
+  <&key> id : INT <<PK>>
+  --
+  * tutor_id : INT <<FK>> <<UK1>>
+  * nome : VARCHAR(60) <<UK1>>
+  * especie : VARCHAR(30)
+  raca : VARCHAR(60)
+  * sexo : CHAR(1)
+  data_nascimento : DATE
+  peso_kg : DECIMAL(5,2)
+}
+
+entity "usuario" as usuario {
+  <&key> id : INT <<PK>>
+  --
+  * login : VARCHAR(40) <<UK>>
+  * nome : VARCHAR(120)
+  * email : VARCHAR(120) <<UK>>
+  * senha_hash : CHAR(60)
+  * perfil : ENUM
+  crmv : VARCHAR(20) <<UK>>
+  * ativo : BOOLEAN
+}
+
+entity "consulta" as consulta {
+  <&key> id : INT <<PK>>
+  --
+  * pet_id : INT <<FK>>
+  * veterinario_id : INT <<FK>> <<UK1>>
+  * data_hora : DATETIME
+  * tipo : ENUM
+  * status : ENUM
+  slot_ativo : DATETIME <<UK1>> <<gerada>>
+}
+
+entity "servico" as servico {
+  <&key> id : INT <<PK>>
+  --
+  * nome : VARCHAR(80) <<UK>>
+  * preco : DECIMAL(10,2)
+  * ativo : BOOLEAN
+}
+
+entity "item_servico" as item {
+  <&key> consulta_id : INT <<PK>> <<FK>>
+  <&key> servico_id : INT <<PK>> <<FK>>
+  --
+  * quantidade : SMALLINT
+  * valor_unitario : DECIMAL(10,2)
+}
+
+entity "prontuario" as prontuario {
+  <&key> id : INT <<PK>>
+  --
+  * consulta_id : INT <<FK>> <<UK>>
+  * anamnese : TEXT
+  exame_fisico : TEXT
+  * diagnostico : TEXT
+  prescricao : TEXT
+  * data_registro : DATETIME
+}
+
+entity "aplicacao_vacina" as aplicacao {
+  <&key> id : INT <<PK>>
+  --
+  * consulta_id : INT <<FK>> <<UK1>>
+  * tipo_vacina_id : INT <<FK>> <<UK1>>
+  * numero_dose : SMALLINT
+  proxima_dose : DATE
+  lote : VARCHAR(30)
+}
+
+entity "recibo" as recibo {
+  <&key> id : INT <<PK>>
+  --
+  * numero : VARCHAR(20) <<UK>>
+  * consulta_id : INT <<FK>> <<UK>>
+  * emitido_por : INT <<FK>>
+  * subtotal : DECIMAL(10,2)
+  * forma_pagamento : ENUM
+  * desconto : DECIMAL(10,2)
+  total : DECIMAL(10,2) <<gerada>>
+  * data_emissao : DATETIME
+}
+
+entity "tipo_vacina" as tipo_vacina {
+  <&key> id : INT <<PK>>
+  --
+  * nome : VARCHAR(60) <<UK>>
+  * intervalo_minimo_dias : SMALLINT
+  * total_doses : SMALLINT
+}
+
+entity "fornecedor" as fornecedor {
+  <&key> id : INT <<PK>>
+  --
+  * cnpj : CHAR(14) <<UK>>
+  * razao_social : VARCHAR(120)
+  telefone : VARCHAR(20)
+  email : VARCHAR(120)
+}
+
+entity "produto" as produto {
+  <&key> id : INT <<PK>>
+  --
+  * nome : VARCHAR(80) <<UK>>
+  * categoria : VARCHAR(40)
+  * controlado : BOOLEAN
+  * quantidade : INT
+  * quantidade_minima : INT
+  * preco_unitario : DECIMAL(10,2)
+  fornecedor_id : INT <<FK>>
+}
+
+entity "movimentacao_estoque" as mov {
+  <&key> id : INT <<PK>>
+  --
+  * produto_id : INT <<FK>>
+  * usuario_id : INT <<FK>>
+  * tipo : ENUM
+  * quantidade : INT
+  * motivo : VARCHAR(40)
+  * data_movimentacao : DATETIME
+  fornecedor_id : INT <<FK>>
+  prontuario_id : INT <<FK>>
+}
+
+tutor ||--o{ pet : possui
+pet ||--o{ consulta : agendado em
+usuario ||--o{ consulta : atende
+consulta ||--o{ item : contém
+servico ||--o{ item : compõe
+consulta ||--o| prontuario : gera
+consulta ||--o| recibo : gera
+usuario ||--o{ recibo : emite
+consulta ||--o{ aplicacao : registra
+tipo_vacina ||--o{ aplicacao : classifica
+produto ||--o{ mov : movimenta
+usuario ||--o{ mov : responsável
+fornecedor |o--o{ produto : fornece
+fornecedor |o--o{ mov : origem
+prontuario |o--o{ mov : autoriza
+
+@enduml

@@ -1,0 +1,195 @@
+@startuml classes
+!pragma layout smetana
+set namespaceSeparator none
+hide circle
+skinparam dpi 150
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 10
+skinparam classAttributeIconSize 0
+skinparam ranksep 50
+skinparam nodesep 35
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1a3a5c
+  HeaderBackgroundColor #dbe5f0
+  ArrowColor #1a3a5c
+}
+
+class Tutor {
+  - id : int
+  - cpf : String <<unique>>
+  - nome : String
+  - telefone : String
+  - email : String <<unique>>
+  - endereco : Endereco
+  - dataCadastro : DateTime
+  --
+  + cadastrar() : void
+  + editar() : void
+  + consultar() : Tutor
+  + listarPets() : List<Pet>
+}
+
+class Pet {
+  - id : int
+  - nome : String <<unique por Tutor>>
+  - especie : String
+  - raca : String
+  - sexo : char
+  - dataNascimento : Date
+  - pesoKg : decimal
+  --
+  + cadastrar() : void
+  + editar() : void
+  + consultarHistorico() : List<Prontuario>
+  + listarVacinas() : List<AplicacaoVacina>
+}
+
+class Usuario {
+  - id : int
+  - login : String <<unique>>
+  - nome : String
+  - email : String <<unique>>
+  - senhaHash : String
+  - perfil : PerfilUsuario
+  - crmv : String <<unique>>
+  - ativo : boolean
+  --
+  + cadastrar() : void
+  + editar() : void
+  + autenticar() : boolean
+  + definirPerfil(perfil) : void
+  + desativar() : void
+}
+
+class Consulta {
+  - id : int
+  - dataHora : DateTime <<unique por Veterinario ativo>>
+  - tipo : TipoConsulta
+  - status : StatusConsulta
+  --
+  + agendar() : void
+  + reagendar(novaData) : void
+  + cancelar() : void
+  + registrarNoShow() : void
+  + buscarAgendadas() : List<Consulta>
+  + finalizar() : void
+}
+
+class Servico {
+  - id : int
+  - nome : String <<unique>>
+  - preco : decimal
+  - ativo : boolean
+  --
+  + cadastrar() : void
+  + atualizarPreco(novoPreco) : void
+}
+
+class ItemServico {
+  - quantidade : int
+  - valorUnitario : decimal
+  --
+  + calcularSubtotalItem() : decimal
+}
+
+class Prontuario {
+  - id : int
+  - anamnese : String
+  - exameFisico : String
+  - diagnostico : String
+  - prescricao : String
+  - dataRegistro : DateTime
+  --
+  + registrar() : void
+  + consultar() : Prontuario
+}
+
+class TipoVacina {
+  - id : int
+  - nome : String <<unique>>
+  - intervaloMinimoDias : int
+  - totalDoses : int
+  --
+  + cadastrar() : void
+}
+
+class AplicacaoVacina {
+  - id : int
+  - numeroDose : int
+  - proximaDose : Date
+  - lote : String
+  --
+  + verificarIntervalo() : boolean
+  + registrarAplicacao() : void
+  + consultarPendentes() : List<AplicacaoVacina>
+}
+
+class Recibo {
+  - id : int
+  - numero : String <<unique>>
+  - subtotal : decimal
+  - formaPagamento : FormaPagamento
+  - desconto : decimal
+  - total : decimal
+  - dataEmissao : DateTime
+  --
+  + emitir() : void
+  + calcularDescontoPix() : decimal
+  + imprimir() : void
+}
+
+class Fornecedor {
+  - id : int
+  - cnpj : String <<unique>>
+  - razaoSocial : String
+  - telefone : String
+  - email : String
+  --
+  + cadastrar() : void
+}
+
+class Produto {
+  - id : int
+  - nome : String <<unique>>
+  - categoria : String
+  - controlado : boolean
+  - quantidade : int
+  - quantidadeMinima : int
+  - precoUnitario : decimal
+  --
+  + cadastrar() : void
+  + atualizarEstoque(qtd) : void
+  + verificarNivelMinimo() : boolean
+  + isControlado() : boolean
+}
+
+class MovimentacaoEstoque {
+  - id : int
+  - tipo : TipoMovimentacao
+  - quantidade : int
+  - motivo : String
+  - dataMovimentacao : DateTime
+  --
+  + registrarEntrada() : void
+  + registrarSaida() : void
+}
+
+Tutor "1" *-- "0..*" Pet : possui >
+Pet "1" -- "0..*" Consulta : agendado em >
+Usuario "1 veterinario" -- "0..*" Consulta : realiza >
+Consulta "1" *-- "0..*" ItemServico : contém >
+Servico "1" -- "0..*" ItemServico : refere-se a <
+Consulta "1" *-- "0..1" Prontuario : gera >
+Consulta "1" *-- "0..1" Recibo : gera >
+Usuario "1 emissor" -- "0..*" Recibo : emite >
+Consulta "1" -- "0..*" AplicacaoVacina : registra >
+TipoVacina "1" -- "0..*" AplicacaoVacina : classifica >
+Fornecedor "0..1" -- "0..*" Produto : fornece >
+Produto "1" -- "0..*" MovimentacaoEstoque : movimenta <
+Usuario "1 responsavel" -- "0..*" MovimentacaoEstoque : registra >
+Fornecedor "0..1" -- "0..*" MovimentacaoEstoque : origem de >
+Prontuario "0..1 prescricao" -- "0..*" MovimentacaoEstoque : autoriza (RN-05) >
+
+@enduml
