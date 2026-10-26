@@ -5,3 +5,9 @@ ssh-key-*
 # Material descartado e de referência
 _descartados/
 referencias/
+# Duplicatas na raiz e ferramentas auxiliares
+/*.pdf
+/Projeto_VidaAnimal_Completo.md
+fase_b/tools/
+fase_a/feedbacks_A2.txt
+fase_c/estilo_pdf.css
