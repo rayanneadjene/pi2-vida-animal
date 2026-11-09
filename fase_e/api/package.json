@@ -1,0 +1,17 @@
+{
+  "name": "vida-animal-api",
+  "version": "1.0.0",
+  "description": "API REST da Clínica Veterinária Vida Animal (PI2) - serviços medidos na Fase E",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mysql2": "^3.11.5"
+  }
+}
