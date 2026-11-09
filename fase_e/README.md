@@ -44,7 +44,7 @@ Foram selecionados dois serviços internos centrais do sistema — um de **leitu
     * **Máquina:** VPS Oracle Cloud com Ubuntu Linux (2 vCPUs, 1 GB de RAM)
     * **Backend:** Node.js `v22` + Express (`localhost:3000`, pool MySQL com 10 conexões)
     * **SGBD:** MySQL Server `8.4` (`localhost:3306`, motor InnoDB)
-    * **Ferramenta de teste:** Grafana k6 (rampa de 1, 5, 10, 25, 50, 100, 200 e 400 VUs)
+    * **Ferramenta de teste:** Grafana k6 (degraus de 1, 5, 10, 25, 50, 100, 200 e 400 VUs, cada um mantido por 10 s)
   * **Testes de carga (SLA): latência, vazão e concorrência (limite de requisições simultâneas)**
     * **Latência (tempo de resposta médio e percentis):** média de `16,97 ms` (`p95 = 75,46 ms`) com 1 VU, evoluindo até `1.335,51 ms` (`p95 = 1.578,45 ms`) em 100 VUs e `5.176,95 ms` (`p95 = 6.516,72 ms`) em 400 VUs.
     * **Vazão (quantidade média de requisições por intervalo de tempo):**
@@ -97,7 +97,7 @@ Foram selecionados dois serviços internos centrais do sistema — um de **leitu
       * Intervalo de `5s`: média de **78,2 req/s** (pico de `101,6 req/s`)
       * Intervalo de `10s`: média de **78,2 req/s** (pico de `94,8 req/s`)
       * Intervalo de `30s`: média de **79,6 req/s** (pico de `93,0 req/s`)
-      * Intervalo de `1min`: média de **72,8 req/s** (pico de `96,6 req/s`, máxima por degrau de concorrência)
+      * Intervalo de `1min`: média de **72,8 req/s** (pico de `72,8 req/s`)
     * **Concorrência (limite de requisições simultâneas):** a vazão satura a partir de **10 VUs** (`94,0 req/s`, limite do pool de conexões), com pico de **96,6 req/s**. O **limite de requisições simultâneas dentro do SLA (RNF-02: `p95 <= 3.000 ms`) é de 200 VUs** (`p95 = 2.214,00 ms`); em **400 VUs** o `p95` atinge `5.803,92 ms`, ultrapassando o limite de 3 s (com `0,00%` de erros HTTP em todos os níveis).
 
     | Concorrência (VUs) | Vazão (`req/s`) | Latência média (`ms`) | `p95` (`ms`) | Erros | CPU API Node (`%`) | CPU MySQL (`%`) |

@@ -7,8 +7,8 @@
 export const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 
 const NIVEIS = (__ENV.NIVEIS || '1,5,10,25,50,100,200,400').split(',').map(Number);
-const PATAMAR = __ENV.PATAMAR || '30s';   // duração de cada degrau
-const RAMPA = __ENV.RAMPA || '5s';        // transição entre degraus
+const PATAMAR = __ENV.PATAMAR || '10s';   // duração de cada degrau
+const RAMPA = __ENV.RAMPA || '2s';        // transição entre degraus
 
 export function estagios() {
   const s = [];
