@@ -85,42 +85,38 @@ Foram selecionados dois serviços internos centrais do sistema — um de **leitu
     * [`fase_e/api/src/server.js`](api/src/server.js) — servidor Express da API `vida-animal-api`
     * [`fase_c/schema_fisico.sql`](../fase_c/schema_fisico.sql) — tabelas `movimentacao_estoque` e `produto`, *triggers* `trg_mov_estoque_bi` e `trg_mov_estoque_ai`, e view `vw_produtos_estoque_baixo`
   * **Arquivos com o código fonte de medição do SLA:**
-    * [`fase_e/k6/s3_movimentacao_estoque.js`](k6/s3_movimentacao_estoque.js) — script de teste de carga do Serviço 2 (suporta `MODO=quente` para único produto e `MODO=espalhado` para 54 produtos)
+    * [`fase_e/k6/s2_movimentacao_estoque.js`](k6/s2_movimentacao_estoque.js) — script de teste de carga do Serviço 2 (movimentações de entrada e saída sobre 54 produtos)
     * [`fase_e/k6/comum.js`](k6/comum.js) — perfil de degraus de concorrência e *thresholds* do SLA
   * **Data da medição:** 08/11/2026
   * **Descrição das configurações:**
     * Mesma configuração do Serviço 1 (VPS Oracle Cloud Ubuntu Linux com 2 vCPUs e 1 GB de RAM, Node.js `v22` com pool de 10 conexões, MySQL Server `8.4` InnoDB e Grafana k6).
-    * Executado em dois cenários: **Cenário 2A (produto único / *hot row*)** e **Cenário 2B (54 produtos variados)**.
   * **Testes de carga (SLA): latência, vazão e concorrência (limite de requisições simultâneas)**
-    * **Cenário 2A — Produto único (*hot row*):**
-      * **Latência:** média de `18,28 ms` (`p95 = 69,32 ms`) com 1 VU, chegando a `1.668,17 ms` (`p95 = 1.900,24 ms`) em 100 VUs e `5.868,26 ms` (`p95 = 6.900,32 ms`) em 400 VUs.
-      * **Vazão por intervalo de tempo:** `1s`: **50,1 req/s** (pico `75,0`) · `5s`: **50,3 req/s** (pico `64,2`) · `10s`: **49,6 req/s** (pico `59,8`) · `30s`: **50,2 req/s** (pico `53,3`) · `1min`: **48,8 req/s** (máxima por degrau: **60,9 req/s**).
-      * **Concorrência (limite de requisições simultâneas):** satura em **25 VUs** (`60,4 req/s`) e respeita o SLA (`p95 <= 3.000 ms`) até **100 VUs** (`p95 = 1.900,24 ms`). Em **200 VUs viola o SLA** (`p95 = 5.187,13 ms`).
-    * **Cenário 2B — 54 produtos variados (baixa disputa de lock por linha):**
-      * **Latência:** média de `20,95 ms` (`p95 = 70,44 ms`) com 1 VU, `105,11 ms` (`p95 = 191,15 ms`) em 10 VUs, `2.057,55 ms` (`p95 = 2.214,00 ms`) em 200 VUs e `4.243,03 ms` (`p95 = 5.803,92 ms`) em 400 VUs.
-      * **Vazão por intervalo de tempo:** `1s`: **78,2 req/s** (pico `112,0`) · `5s`: **78,2 req/s** (pico `101,6`) · `10s`: **78,2 req/s** (pico `94,8`) · `30s`: **79,6 req/s** (pico `93,0`) · `1min`: **72,8 req/s** (máxima por degrau: **96,6 req/s** — **59% superior** ao cenário de produto único).
-      * **Concorrência (limite de requisições simultâneas):** satura em **10 VUs** (`94,0 req/s`, limite do pool de conexões) e respeita o SLA (`p95 <= 3.000 ms`) até **200 VUs** (`p95 = 2.214,00 ms` — **dobro** do limite de concorrência do Cenário 2A), violando apenas em **400 VUs** (`p95 = 5.803,92 ms`).
+    * **Latência (tempo de resposta médio e percentis):** média de `20,95 ms` (`p95 = 70,44 ms`) com 1 VU, evoluindo até `1.022,65 ms` (`p95 = 1.306,35 ms`) em 100 VUs, `2.057,55 ms` (`p95 = 2.214,00 ms`) em 200 VUs e `4.243,03 ms` (`p95 = 5.803,92 ms`) em 400 VUs.
+    * **Vazão (quantidade média de requisições por intervalo de tempo):**
+      * Intervalo de `1s`: média de **78,2 req/s** (pico de `112,0 req/s`)
+      * Intervalo de `5s`: média de **78,2 req/s** (pico de `101,6 req/s`)
+      * Intervalo de `10s`: média de **78,2 req/s** (pico de `94,8 req/s`)
+      * Intervalo de `30s`: média de **79,6 req/s** (pico de `93,0 req/s`)
+      * Intervalo de `1min`: média de **72,8 req/s** (pico de `96,6 req/s`, máxima por degrau de concorrência)
+    * **Concorrência (limite de requisições simultâneas):** a vazão satura a partir de **10 VUs** (`94,0 req/s`, limite do pool de conexões), com pico de **96,6 req/s**. O **limite de requisições simultâneas dentro do SLA (RNF-02: `p95 <= 3.000 ms`) é de 200 VUs** (`p95 = 2.214,00 ms`); em **400 VUs** o `p95` atinge `5.803,92 ms`, ultrapassando o limite de 3 s (com `0,00%` de erros HTTP em todos os níveis).
 
-    | Concorrência (VUs) | 2A Vazão — 1 produto (`req/s`) | 2A Lat. média (`ms`) | 2A Lat. `p95` (`ms`) | 2A CPU Node / MySQL | 2B Vazão — 54 produtos (`req/s`) | 2B Lat. média (`ms`) | 2B Lat. `p95` (`ms`) | 2B CPU Node / MySQL |
-    | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-    | **1** | 53,2 | 18,28 | **69,32** | 33% / 22% | 47,1 | 20,95 | **70,44** | 34% / 23% |
-    | **5** | 54,8 | 89,68 | **139,72** | 45% / 35% | 68,4 | 71,10 | **172,91** | 70% / 37% |
-    | **10** | 30,1 | 331,47 | **682,29** | 20% / 28% | 94,0 | 105,11 | **191,15** | 61% / 52% |
-    | **25** | 60,4 | 412,88 | **481,71** | 31% / 37% | 89,1 | 278,47 | **482,81** | 76% / 40% |
-    | **50** | 59,0 | 846,06 | **915,95** | 28% / 32% | 94,4 | 524,74 | **782,55** | 58% / 54% |
-    | **100** | **60,9** | 1.668,17 | **1.900,24** ✅ | 30% / 30% | **96,6** | 1.022,65 | **1.306,35** ✅ | 52% / 58% |
-    | **200** | 51,9 | 3.969,22 | **5.187,13** ❌ | 32% / 31% | 96,1 | 2.057,55 | **2.214,00** ✅ | 55% / 56% |
-    | **400** | 56,7 | 5.868,26 | **6.900,32** ❌ | 32% / 38% | 67,8 | 4.243,03 | **5.803,92** ❌ | 58% / 43% |
+    | Concorrência (VUs) | Vazão (`req/s`) | Latência média (`ms`) | `p95` (`ms`) | Erros | CPU API Node (`%`) | CPU MySQL (`%`) |
+    | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+    | **1** | 47,1 | 20,95 | **70,44** | 0,00% | 34% | 23% |
+    | **5** | 68,4 | 71,10 | **172,91** | 0,00% | 70% | 37% |
+    | **10** | 94,0 | 105,11 | **191,15** | 0,00% | 61% | 52% |
+    | **25** | 89,1 | 278,47 | **482,81** | 0,00% | 76% | 40% |
+    | **50** | 94,4 | 524,74 | **782,55** | 0,00% | 58% | 54% |
+    | **100** | **96,6** | 1.022,65 | **1.306,35** ✅ | 0,00% | 52% | 58% |
+    | **200** | 96,1 | 2.057,55 | **2.214,00** ✅ | 0,00% | 55% | 56% |
+    | **400** | 67,8 | 4.243,03 | **5.803,92** ❌ | 0,00% | 58% | 43% |
 
-    ![Evolução temporal do Serviço 2 (produto único) na VPS OCI](graficos/s3_estoque_quente_evolucao.png)
-    ![Vazão por intervalo de tempo do Serviço 2 (produto único)](graficos/s3_estoque_quente_vazao_janelas.png)
-    ![Latência e vazão por concorrência do Serviço 2 (produto único)](graficos/s3_estoque_quente_por_nivel.png)
-    ![Evolução temporal do Serviço 2 (54 produtos) na VPS OCI](graficos/s3_estoque_espalhado_evolucao.png)
-    ![Vazão por intervalo de tempo do Serviço 2 (54 produtos)](graficos/s3_estoque_espalhado_vazao_janelas.png)
-    ![Latência e vazão por concorrência do Serviço 2 (54 produtos)](graficos/s3_estoque_espalhado_por_nivel.png)
+    ![Evolução temporal do Serviço 2 na VPS OCI](graficos/s2_estoque_evolucao.png)
+    ![Vazão por intervalo de tempo do Serviço 2](graficos/s2_estoque_vazao_janelas.png)
+    ![Latência e vazão por nível de concorrência do Serviço 2](graficos/s2_estoque_por_nivel.png)
 
   * **LEVANTAMENTO DE HIPÓTESES dos potenciais gargalos do sistema que influenciam esta funcionalidade:**
-    1. **Serialização por trava exclusiva de linha (*row-level X-lock* no InnoDB) nos *triggers* `trg_mov_estoque_bi` (`SELECT ... FOR UPDATE`) e `trg_mov_estoque_ai` (`UPDATE produto`):** toda inserção em `movimentacao_estoque` bloqueia exclusivamente o registro correspondente em `produto` até o `COMMIT`. No Cenário 2A, nota-se que a CPU fica ociosa (**apenas ~30% no Node e ~30%–37% no MySQL**), provando que as transações ficam paradas esperando liberação de lock + *fsync* de disco em vez de CPU. Quando a carga é espalhada entre 54 produtos (Cenário 2B), a vazão sobe **59%** (de 60,9 para 96,6 req/s) e o limite de concorrência dentro do SLA dobra de **100 para 200 VUs**.
+    1. **Serialização por trava exclusiva de linha (*row-level X-lock* no InnoDB) nos *triggers* `trg_mov_estoque_bi` (`SELECT ... FOR UPDATE`) e `trg_mov_estoque_ai` (`UPDATE produto`):** toda inserção em `movimentacao_estoque` bloqueia exclusivamente o registro correspondente em `produto` até o `COMMIT`, de modo que movimentações simultâneas sobre o mesmo produto são executadas em fila.
     2. **Retenção prolongada do lock exclusivo durante a leitura de `vw_produtos_estoque_baixo` dentro da mesma transação:** em [`estoque.js`](api/src/routes/estoque.js), após o `INSERT` (que já adquiriu o `X-lock` sobre `produto`), a aplicação faz um segundo comando SQL (`SELECT ... LEFT JOIN vw_produtos_estoque_baixo`) antes de executar o `COMMIT`. Esse *round-trip* adicional mantém a linha bloqueada por mais tempo, reduzindo a vazão máxima de atualizações sobre um mesmo item.
     3. **Latência de I/O do volume de bloco da VPS OCI no `COMMIT` síncrono (`innodb_flush_log_at_trx_commit = 1`) somada ao limite do pool (`DB_POOL = 10`):** cada transação de escrita exige *flush* do redo log no armazenamento de rede da OCI; quando `VUs > 10`, as requisições aguardam em fila por uma das 10 conexões do pool antes mesmo de chegar ao SGBD.
 
@@ -128,10 +124,9 @@ Foram selecionados dois serviços internos centrais do sistema — um de **leitu
 
 ### 13.2. Comparação Consolidada entre os Serviços (VPS Oracle Cloud)
 
-| Serviço / Cenário | Tipo de Operação | Latência média (1 VU) | Vazão máxima (`req/s`) | Vazão média (`1s` / `5s` / `10s` / `30s` / `1min`) | Ponto de saturação | Limite de concorrência no SLA (`p95 <= 3s`) | Taxa de erros |
+| Serviço | Tipo de Operação | Latência média (1 VU) | Vazão máxima (`req/s`) | Vazão média (`1s` / `5s` / `10s` / `30s` / `1min`) | Ponto de saturação | Limite de concorrência no SLA (`p95 <= 3s`) | Taxa de erros |
 |---|---|:-:|:-:|:-:|:-:|:-:|:-:|
 | **Serviço 1 — Visualizar Agenda** | Leitura | `16,97 ms` | **78,7 req/s** | `69,5 / 69,5 / 69,0 / 68,8 / 65,3 req/s` | 5–10 VUs | **100 VUs** (`p95 = 1.578 ms`) | `0,00%` |
-| **Serviço 2A — Estoque (1 produto / *hot row*)** | Leitura / Inserção / Atualização | `18,28 ms` | **60,9 req/s** | `50,1 / 50,3 / 49,6 / 50,2 / 48,8 req/s` | 25 VUs | **100 VUs** (`p95 = 1.900 ms`) | `0,00%` |
-| **Serviço 2B — Estoque (54 produtos)** | Leitura / Inserção / Atualização | `20,95 ms` | **96,6 req/s** | `78,2 / 78,2 / 78,2 / 79,6 / 72,8 req/s` | 10 VUs | **200 VUs** (`p95 = 2.214 ms`) | `0,00%` |
+| **Serviço 2 — Registrar Movimentação de Estoque** | Leitura / Inserção / Atualização | `20,95 ms` | **96,6 req/s** | `78,2 / 78,2 / 78,2 / 79,6 / 72,8 req/s` | 10 VUs | **200 VUs** (`p95 = 2.214 ms`) | `0,00%` |
 
 ![Comparação consolidada entre os serviços na VPS Oracle Cloud](graficos/comparacao_servicos.png)

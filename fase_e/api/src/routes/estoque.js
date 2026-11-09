@@ -1,4 +1,4 @@
-// Serviço 3 - Registrar movimentação de estoque (UC-06 / RF-06) - INSERÇÃO + ATUALIZAÇÃO
+// Serviço 2 - Registrar movimentação de estoque (UC-06 / RF-06) - INSERÇÃO + ATUALIZAÇÃO
 // POST /api/estoque/movimentacoes
 //   { produto_id, usuario_id, tipo: "ENTRADA"|"SAIDA", quantidade, motivo, fornecedor_id?, prontuario_id? }
 // Os triggers trg_mov_estoque_bi (SELECT ... FOR UPDATE + RN-05 + saldo) e
