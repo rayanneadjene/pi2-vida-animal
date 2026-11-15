@@ -94,6 +94,8 @@ Para cada serviço, o script executor ([`fase_e/scripts/run_medicao.sh`](scripts
   - [`fase_e/api/src/db.js`](api/src/db.js) — pool `mysql2/promise` (elevado de `10` para `30` conexões)
   - [`fase_e/api/src/server.js`](api/src/server.js) — servidor Express da API `vida-animal-api`
   - [`fase_c/schema_fisico.sql`](../fase_c/schema_fisico.sql) e [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) — tabelas `consulta`, `pet`, `tutor`, `usuario` e índice `ix_consulta_agenda`
+- **Arquivos com o código fonte de medição do SLA:** [`fase_e/k6/s1_agenda.js`](k6/s1_agenda.js) (`GET /api/agenda`), [`fase_e/k6/comum.js`](k6/comum.js) (perfil `ramping-vus` e *thresholds* do SLA) e [`fase_e/scripts/run_medicao.sh`](scripts/run_medicao.sh)
+- **Descrição das configurações:** VPS OCI Ubuntu Linux (2 vCPUs, 1 GB RAM), Node.js `v22.22.1` + Express (`localhost:3000`; `DB_POOL` ampliado de `10` para `30`; cache `CacheTTL` com `TTL = 30.000 ms` e índice `ix_consulta_agenda` na 2ª medição), MySQL `8.4` (`localhost:3306`, InnoDB, `innodb_buffer_pool_size = 128 MiB`) e k6 em 8 degraus (`1..400` VUs × `10 s`).
 
 ---
 
@@ -218,6 +220,8 @@ Com o banco praticamente retirado do caminho crítico (`CPU MySQL <= 24,8%` e `9
   - [`fase_e/api/src/db.js`](api/src/db.js) — pool de conexões com o MySQL (`DB_POOL = 30`)
   - [`fase_e/api/src/server.js`](api/src/server.js) — servidor Express da API `vida-animal-api`
   - [`fase_c/schema_fisico.sql`](../fase_c/schema_fisico.sql) e [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) — tabelas `movimentacao_estoque` e `produto`, *triggers* `trg_mov_estoque_bi` e `trg_mov_estoque_ai`, e *stored procedure* `sp_registrar_movimentacao`
+- **Arquivos com o código fonte de medição do SLA:** [`fase_e/k6/s2_movimentacao_estoque.js`](k6/s2_movimentacao_estoque.js) (`POST /api/estoque/movimentacoes` em 54 produtos), [`fase_e/k6/comum.js`](k6/comum.js) (perfil `ramping-vus` e *thresholds* do SLA) e [`fase_e/scripts/run_medicao.sh`](scripts/run_medicao.sh)
+- **Descrição das configurações:** Mesma VPS OCI (2 vCPUs, 1 GB RAM), Node.js `v22.22.1` + Express (`localhost:3000`, `DB_POOL` ampliado de `10` para `30`), MySQL `8.4` InnoDB (`innodb_flush_log_at_trx_commit = 1 → 2` e `sync_binlog = 1 → 0` durante a 2ª medição; *stored procedure* `sp_registrar_movimentacao` substituindo o `LEFT JOIN vw_produtos_estoque_baixo` e a transação multi-chamada da 1ª medição) e k6 em 8 degraus (`1..400` VUs × `10 s`).
 
 ---
 
