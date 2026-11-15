@@ -7,8 +7,9 @@ const pool = mysql.createPool({
   user: process.env.DB_USER || 'vida',
   password: process.env.DB_PASS || 'vida123',
   database: process.env.DB_NAME || 'clinica_vida_animal',
-  // Tamanho do pool: uma das hipóteses de gargalo avaliadas na Fase E
-  connectionLimit: Number(process.env.DB_POOL || 10),
+  // 2ª medição (Fase E): pool ampliado de 10 para 30 conexões para eliminar
+  // a fila antes do SGBD sob alta concorrência e favorecer o group commit no InnoDB.
+  connectionLimit: Number(process.env.DB_POOL || 30),
   waitForConnections: true,
   queueLimit: 0,
   dateStrings: true,

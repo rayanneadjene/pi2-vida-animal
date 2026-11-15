@@ -3,7 +3,11 @@ const express = require('express');
 const pool = require('./db');
 
 const app = express();
-app.use(express.json());
+// 2ª medição: sem ETag (hash SHA-1 de cada corpo de resposta no event loop) e sem
+// cabeçalho X-Powered-By - menos CPU por requisição na API Node.js.
+app.disable('etag');
+app.disable('x-powered-by');
+app.use(express.json({ limit: '10kb' }));
 
 app.get('/api/health', async (_req, res) => {
   await pool.query('SELECT 1');

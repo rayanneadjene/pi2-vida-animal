@@ -11,3 +11,7 @@ referencias/
 fase_b/tools/
 fase_a/feedbacks_A2.txt
 fase_c/estilo_pdf.css
+# Dependências Node.js e arquivos brutos grandes de medição (k6 --out json)
+**/node_modules/
+fase_e/resultados/*/raw/
+fase_e/resultados/*/recursos/
