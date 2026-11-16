@@ -15,3 +15,5 @@ fase_c/estilo_pdf.css
 **/node_modules/
 fase_e/resultados/*/raw/
 fase_e/resultados/*/recursos/
+# Material pessoal da apresentação (não versionar)
+apresentacao/

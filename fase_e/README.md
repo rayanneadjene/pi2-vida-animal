@@ -33,8 +33,8 @@ Foram avaliados dois serviços internos críticos do sistema — um intensivo em
 
 | Serviço | Endpoint HTTP | Caso de Uso / RF | Operações no Banco (`clinica_vida_animal`) |
 |---|---|---|---|
-| **Serviço 1 — Visualizar Agenda de Consultas** | `GET /api/agenda?data=AAAA-MM-DD` | UC-03 / RF-03 | **Leitura:** `SELECT` com `INNER JOIN` entre `consulta`, `pet`, `tutor` e `usuario`, filtrando por data de agendamento (e opcionalmente veterinário). |
-| **Serviço 2 — Registrar Movimentação de Estoque** | `POST /api/estoque/movimentacoes` | UC-06 / RF-06 | **Leitura / Inserção / Atualização:** `INSERT` em `movimentacao_estoque` + *trigger* `trg_mov_estoque_bi` (validação RN-05 e bloqueio exclusivo de saldo) + *trigger* `trg_mov_estoque_ai` (`UPDATE produto`) + retorno do estoque atualizado e alerta de estoque baixo (RN-06). |
+| **Serviço 1 — Visualizar Agenda de Consultas** | `GET /api/agenda?data=AAAA-MM-DD` | UC-03 (passo 1: Veterinário acessa a agenda do dia) / RF-03 | **Leitura:** `SELECT` com `INNER JOIN` entre `consulta`, `pet`, `tutor` e `usuario`, filtrando por data de agendamento (e opcionalmente veterinário). |
+| **Serviço 2 — Registrar Movimentação de Estoque** | `POST /api/estoque/movimentacoes` | UC-05 / RF-06 | **Leitura / Inserção / Atualização:** `INSERT` em `movimentacao_estoque` + *trigger* `trg_mov_estoque_bi` (validação RN-05 e bloqueio exclusivo de saldo) + *trigger* `trg_mov_estoque_ai` (`UPDATE produto`) + retorno do estoque atualizado e alerta de estoque baixo (RN-06). |
 
 **Critérios de SLA adotados ([`fase_a/Fase_A2_Corrigido.md`](../fase_a/Fase_A2_Corrigido.md) — Requisitos Não-Funcionais):**
 - **RNF-02 (Desempenho):** tempo de resposta em até **3 segundos** (`p95 <= 3.000 ms`).
@@ -137,16 +137,6 @@ Para cada serviço, o script executor ([`fase_e/scripts/run_medicao.sh`](scripts
 
 ---
 
-#### Melhorias / Otimizações Aplicadas ao Serviço 1
-
-| Hipótese da Medição 1 | Otimização Implementada | Arquivo Modificado / Criado |
-|---|---|---|
-| **H1 + H3:** Saturação de CPU no `mysqld`/`node` + serialização JSON repetitiva | Criação da classe **`CacheTTL`** em memória com armazenamento em **`Buffer` UTF-8 pré-serializado** (zero `JSON.stringify` por hit), coalescência ***single-flight*** (requisições simultâneas na mesma chave aguardam uma única ida ao banco), ***stale-while-revalidate* (SWR)** e *jitter* de ±20% no TTL (`AGENDA_CACHE_TTL_MS = 30000`) + cabeçalho HTTP `Cache-Control: private, max-age=30, stale-while-revalidate=30` e rota de diagnóstico `GET /api/agenda/cache`. Na Medição 2 obteve **`99,01%` de taxa de acerto** (`31.030` hits, `310` misses, `768` revalidações em segundo plano). | [`fase_e/api/src/cache.js`](api/src/cache.js) *(novo)*<br>[`fase_e/api/src/routes/agenda.js`](api/src/routes/agenda.js) *(editado)* |
-| **H2:** *Filesort* e acessos extras na tabela `consulta` no fallback / *cache miss* | Criação do **índice de cobertura `ix_consulta_agenda`** `(data_hora, veterinario_id, pet_id, tipo, status)` + remoção do índice redundante `ix_consulta_data` + `ANALYZE TABLE`, permitindo `EXPLAIN` com `Using where; Using index` na filtragem diária da agenda, reduzindo CPU do `mysqld` de `~93%` para **`~0,2%–24,8%`** durante a Medição 2. | [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) *(novo)* |
-| **H1 + Overhead HTTP:** custo de *hashing* ETag por resposta e alocação de buffers no Express | Desativação de **`etag`** (`app.disable('etag')`) e **`x-powered-by`** no Express; ajuste de `express.json({ limit: '10kb' })`; aumento do pool de conexões `DB_POOL` de `10` para **`30`**. | [`fase_e/api/src/server.js`](api/src/server.js) *(editado)*<br>[`fase_e/api/src/db.js`](api/src/db.js) *(editado)* |
-
----
-
 #### MEDIÇÃO 2 — Serviço 1 (`15/11/2026`)
 
 - **Data da medição:** `15/11/2026`
@@ -212,6 +202,16 @@ Com o banco praticamente retirado do caminho crítico (`CPU MySQL <= 24,8%` e `9
 
 ---
 
+#### Melhorias / Otimizações Aplicadas ao Serviço 1
+
+| Hipótese da Medição 1 | Otimização Implementada | Arquivo Modificado / Criado |
+|---|---|---|
+| **H1 + H3:** Saturação de CPU no `mysqld`/`node` + serialização JSON repetitiva | Criação da classe **`CacheTTL`** em memória com armazenamento em **`Buffer` UTF-8 pré-serializado** (zero `JSON.stringify` por hit), coalescência ***single-flight*** (requisições simultâneas na mesma chave aguardam uma única ida ao banco), ***stale-while-revalidate* (SWR)** e *jitter* de ±20% no TTL (`AGENDA_CACHE_TTL_MS = 30000`) + cabeçalho HTTP `Cache-Control: private, max-age=30, stale-while-revalidate=30` e rota de diagnóstico `GET /api/agenda/cache`. Na Medição 2 obteve **`99,01%` de taxa de acerto** (`31.030` hits, `310` misses, `768` revalidações em segundo plano). | [`fase_e/api/src/cache.js`](api/src/cache.js) *(novo)*<br>[`fase_e/api/src/routes/agenda.js`](api/src/routes/agenda.js) *(editado)* |
+| **H2:** *Filesort* e acessos extras na tabela `consulta` no fallback / *cache miss* | Criação do **índice de cobertura `ix_consulta_agenda`** `(data_hora, veterinario_id, pet_id, tipo, status)` + remoção do índice redundante `ix_consulta_data` + `ANALYZE TABLE`, permitindo `EXPLAIN` com `Using where; Using index` na filtragem diária da agenda, reduzindo CPU do `mysqld` de `~93%` para **`~0,2%–24,8%`** durante a Medição 2. | [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) *(novo)* |
+| **H1 + Overhead HTTP:** custo de *hashing* ETag por resposta e alocação de buffers no Express | Desativação de **`etag`** (`app.disable('etag')`) e **`x-powered-by`** no Express; ajuste de `express.json({ limit: '10kb' })`; aumento do pool de conexões `DB_POOL` de `10` para **`30`**. | [`fase_e/api/src/server.js`](api/src/server.js) *(editado)*<br>[`fase_e/api/src/db.js`](api/src/db.js) *(editado)* |
+
+---
+
 ### Serviço 2 — Registrar Movimentação de Estoque (`POST /api/estoque/movimentacoes`)
 
 - **Tipo de operações:** leitura / inserção / atualização transacional
@@ -260,16 +260,6 @@ Com o banco praticamente retirado do caminho crítico (`CPU MySQL <= 24,8%` e `9
   1. **Serialização por trava exclusiva de linha (*row-level X-lock* no InnoDB)** nos *triggers* `trg_mov_estoque_bi` (`SELECT ... FOR UPDATE`) e `trg_mov_estoque_ai` (`UPDATE produto`): mantinha a linha de `produto` travada até o `COMMIT`.
   2. **Retenção prolongada do lock durante a leitura de `vw_produtos_estoque_baixo` na mesma transação:** em `estoque.js`, após o `INSERT`, a aplicação fazia uma 2ª viagem SQL (`SELECT ... LEFT JOIN vw_produtos_estoque_baixo`) antes de executar o `COMMIT`, somando mais *round-trips* (`BEGIN`, `INSERT`, `SELECT`, `COMMIT`) enquanto o `X-lock` estava ativo.
   3. **Latência de I/O do volume de bloco no `COMMIT` síncrono (`innodb_flush_log_at_trx_commit = 1`) + fila do pool (`DB_POOL = 10`):** cada inserção forçava *fsync* síncrono no disco de rede e limitava a concorrência interna a apenas 10 conexões.
-
----
-
-#### Melhorias / Otimizações Aplicadas ao Serviço 2
-
-| Hipótese da Medição 1 | Otimização Implementada | Arquivo Modificado / Criado |
-|---|---|---|
-| **H1 + H2:** 4 *round-trips* SQL (`BEGIN`, `INSERT`, `LEFT JOIN vw_produtos_estoque_baixo`, `COMMIT`) mantendo `X-lock` | Criação da ***stored procedure* `sp_registrar_movimentacao`**: executa `INSERT INTO movimentacao_estoque` em autocommit (os *triggers* `trg_mov_estoque_bi` e `trg_mov_estoque_ai` disparam atomicamente e o `X-lock` em `produto` é **liberado imediatamente** no fim do `INSERT`), retornando em seguida `(quantidade <= quantidade_minima) AS estoque_baixo` pela chave primária de `produto` em **1 único `CALL` (`pool.execute`)**, sem `getConnection()` nem *join* com a view. | [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) *(novo)*<br>[`fase_e/api/src/routes/estoque.js`](api/src/routes/estoque.js) *(editado)* |
-| **H3 (Pool):** Contenção na fila do pool (`DB_POOL = 10`) | Aumento do pool padrão em `db.js` de `10` para **`30` conexões** (`DB_POOL = 30`), reduzindo o represamento em patamares de `25` a `200` VUs. | [`fase_e/api/src/db.js`](api/src/db.js) *(editado)* |
-| **H3 (I/O de Redo/Binlog):** `fsync` bloqueante a cada `COMMIT` no volume de rede da OCI | Ajuste operacional no MySQL da VPS durante a rodada (`run_medicao.sh`): **`innodb_flush_log_at_trx_commit = 2`** (flush por segundo ao SO em vez de *fsync* por transação) e **`sync_binlog = 0`**, preservando atomicidade e *triggers* ACID de saldo. | [`fase_e/scripts/run_medicao.sh`](scripts/run_medicao.sh) *(editado)* |
 
 ---
 
@@ -336,6 +326,16 @@ Com o banco praticamente retirado do caminho crítico (`CPU MySQL <= 24,8%` e `9
 
 **Análise de gargalos residuais (Serviço 2 — Medição 2):**
 As otimizações dobraram a vazão em todo o espectro de carga (atingindo `184,6 req/s` com `p95 = 780,22 ms` em 100 VUs e trazendo o `p95` global do teste para `2.403,15 ms` ✅). Em **`400 VUs`**, entretanto, permanecem dois limites físicos esperados nessa topologia: (1) a **co-localização** de `mysqld`, `node` e `k6` numa única VM de **2 vCPUs / 951 MiB RAM** gera `~145,3%` de `CPU steal` e pressão de swap sob 400 conexões TCP simultâneas; e (2) as regras ACID de estoque (`trg_mov_estoque_bi` / `trg_mov_estoque_ai` em 54 produtos) mantêm exclusão mútua por linha de produto e `8,43%` de `iowait` em escrita contínua. Como próximo passo, recomenda-se **desacoplar o banco de dados em instância dedicada com mais RAM**, aplicar ***rate limiting* / fila assíncrona** para picos extremos e **gerar carga a partir de máquina externa**.
+
+---
+
+#### Melhorias / Otimizações Aplicadas ao Serviço 2
+
+| Hipótese da Medição 1 | Otimização Implementada | Arquivo Modificado / Criado |
+|---|---|---|
+| **H1 + H2:** 4 *round-trips* SQL (`BEGIN`, `INSERT`, `LEFT JOIN vw_produtos_estoque_baixo`, `COMMIT`) mantendo `X-lock` | Criação da ***stored procedure* `sp_registrar_movimentacao`**: executa `INSERT INTO movimentacao_estoque` em autocommit (os *triggers* `trg_mov_estoque_bi` e `trg_mov_estoque_ai` disparam atomicamente e o `X-lock` em `produto` é **liberado imediatamente** no fim do `INSERT`), retornando em seguida `(quantidade <= quantidade_minima) AS estoque_baixo` pela chave primária de `produto` em **1 único `CALL` (`pool.execute`)**, sem `getConnection()` nem *join* com a view. | [`fase_e/db/otimizacoes_medicao2.sql`](db/otimizacoes_medicao2.sql) *(novo)*<br>[`fase_e/api/src/routes/estoque.js`](api/src/routes/estoque.js) *(editado)* |
+| **H3 (Pool):** Contenção na fila do pool (`DB_POOL = 10`) | Aumento do pool padrão em `db.js` de `10` para **`30` conexões** (`DB_POOL = 30`), reduzindo o represamento em patamares de `25` a `200` VUs. | [`fase_e/api/src/db.js`](api/src/db.js) *(editado)* |
+| **H3 (I/O de Redo/Binlog):** `fsync` bloqueante a cada `COMMIT` no volume de rede da OCI | Ajuste operacional no MySQL da VPS durante a rodada (`run_medicao.sh`): **`innodb_flush_log_at_trx_commit = 2`** (flush por segundo ao SO em vez de *fsync* por transação) e **`sync_binlog = 0`**, preservando atomicidade e *triggers* ACID de saldo. | [`fase_e/scripts/run_medicao.sh`](scripts/run_medicao.sh) *(editado)* |
 
 ---
 
